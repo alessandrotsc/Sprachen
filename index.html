@@ -139,6 +139,19 @@
   .fuss{text-align:center;color:var(--text-dim);font-size:12px;margin-top:22px}
   .zurueck{background:none;color:var(--cyan-hell);font-size:15px;padding:8px 0;margin-bottom:6px;display:inline-flex;align-items:center;gap:6px}
 
+  /* Wortschatz-Archiv */
+  .seg{display:flex;gap:6px;background:var(--glas);border:1px solid var(--line);border-radius:14px;padding:5px;margin:2px 0 12px;
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+  .seg button{flex:1;padding:11px 6px;border-radius:10px;background:none;color:var(--text-dim);font-weight:700;font-size:14px}
+  .seg button.an{background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#04222e}
+  #archiv-suche{margin-top:0}
+  .archiv-liste{background:var(--glas);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:12px;
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+  .wz{display:flex;justify-content:space-between;gap:12px;padding:12px 15px;border-top:1px solid rgba(255,255,255,.06)}
+  .wz:first-child{border-top:none}
+  .wz .it{font-weight:600}
+  .wz .de{color:var(--text-dim);text-align:right}
+  .wz .vb{font-size:10px;font-weight:800;color:var(--cyan-hell);background:rgba(46,203,224,.12);border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:7px;vertical-align:middle}
   /* Toast */
   #toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
     background:rgba(8,31,52,.92);border:1px solid var(--line);color:var(--text);padding:13px 18px;border-radius:14px;font-size:14px;
@@ -172,8 +185,33 @@ const APP = {"sprachen": [{"key": "it", "name": "Italienisch", "emoji": "🇮�
     <div class="kopf-flag" id="kurse-flag"></div>
     <div><h1 id="sprach-titel"></h1><div class="sub">Wähle einen Kurs</div></div>
   </div>
+  <button class="kap glas" onclick="oeffneArchiv()" style="border-color:rgba(46,203,224,.35)">
+    <div class="nr emoji-nr">🗂️</div>
+    <div><div class="t">Wortschatz-Archiv</div><div class="z" id="archiv-teaser"></div></div>
+    <div class="pf">›</div>
+  </button>
+  <div class="abschnitt" style="margin-top:16px">Kurse</div>
   <div id="kurs-liste"></div>
   <div class="fuss">Jeder Kurs hat mehrere Kapitel mit Vokabeln und Dialog.</div>
+</div>
+
+<!-- ANSICHT: WORTSCHATZ-ARCHIV -->
+<div id="archiv" class="versteckt">
+  <button class="zurueck" onclick="zeige('kurse')">‹ Kurse</button>
+  <div class="kopf">
+    <div class="kopf-flag" id="archiv-flag"></div>
+    <div><h1>Wortschatz</h1><div class="sub" id="archiv-sub"></div></div>
+  </div>
+  <div class="seg" id="archiv-tabs">
+    <button data-f="alle" class="an">Alle</button>
+    <button data-f="verben">Verben</button>
+    <button data-f="nomen">Nomen</button>
+  </div>
+  <input type="text" id="archiv-suche" placeholder="🔎 Vokabel oder Übersetzung suchen ..."
+         autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false">
+  <button class="btn" id="archiv-ueben" style="margin-top:12px">🎯 Üben</button>
+  <div class="fuss" id="archiv-count" style="margin-top:14px"></div>
+  <div class="archiv-liste" id="archiv-liste"></div>
 </div>
 
 <!-- ANSICHT: KAPITELAUSWAHL -->
@@ -204,7 +242,7 @@ const APP = {"sprachen": [{"key": "it", "name": "Italienisch", "emoji": "🇮�
 
 <!-- ANSICHT: QUIZ -->
 <div id="quiz" class="versteckt">
-  <button class="zurueck" onclick="zeige('kapitel')">‹ Zurück</button>
+  <button class="zurueck" onclick="zeige(zurueckZiel)">‹ Zurück</button>
   <div class="karte glas">
     <div class="meta"><span id="q-modus"></span><span id="q-zaehler"></span></div>
     <div class="leiste"><i id="q-balken"></i></div>
@@ -234,7 +272,7 @@ const APP = {"sprachen": [{"key": "it", "name": "Italienisch", "emoji": "🇮�
     <div class="leiste"><i id="e-balken"></i></div>
     <button class="btn grau versteckt" id="e-falsche" onclick="nurFalsche()" style="margin-top:12px">Falsche wiederholen (<span id="e-anz-falsch"></span>)</button>
     <button class="btn gross" onclick="mischenNeu()">🔀 Nochmal (neu gemischt)</button>
-    <button class="btn grau" onclick="zeige('kapitel')">Zurück zur Auswahl</button>
+    <button class="btn grau" onclick="zeige(zurueckZiel)">Zurück zur Auswahl</button>
     <div class="liste" id="e-liste"></div>
   </div>
 </div>
@@ -296,6 +334,8 @@ function waehleSprache(i){
       + '<div class="pf">›</div></button>';
   });
   document.getElementById('kurs-liste').innerHTML = html;
+  const alleV = s.kurse.reduce((n,k)=>n+k.kapitel.reduce((m,c)=>m+(c.vokabeln?c.vokabeln.length:0),0),0);
+  document.getElementById('archiv-teaser').textContent = alleV+' Vokabeln durchsuchen & üben';
   zeige('kurse');
 }
 
@@ -318,9 +358,32 @@ function waehleKurs(ki){
 
 /* ---------- Uebungs-Engine (Kapitel / Quiz / Ergebnis) ---------- */
 let kap = null, liste = [], idx = 0, punkte = 0, modus = 'vokabeln', beantwortet = false, ergebnisse = [];
+let zurueckZiel = 'kapitel', quizQuelle = [];
+let VOKALL = [], archivFilter = 'alle', gefiltert = [];
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* Verb-Erkennung: italienischer Infinitiv (-are/-ere/-ire, auch reflexiv) + deutsches Verb, kein Nomen */
+function istVerb(it, de){
+  const i = String(it||'').trim().toLowerCase();
+  if(/\s/.test(i)) return false;
+  if(i.length < 4) return false;
+  if(!/(are|ere|ire|arsi|ersi|irsi)$/.test(i)) return false;
+  const d = String(de||'').trim().toLowerCase();
+  if(/^(der |die |das |dem |den |des |ein |eine |einen |einem |einer )/.test(d)) return false;
+  const last = d.split(/\s+/).pop() || '';
+  return /(en|rn|ln)$/.test(last) || ['sein','tun'].includes(last)
+      || /^(sich |etwas |jemanden |jemandem |jdn|jdm)/.test(d);
+}
+function istNomen(it, de){
+  const d = String(de||'').trim().toLowerCase();
+  if(/^(der |die |das )/.test(d)) return true;
+  const i = String(it||'').trim().toLowerCase();
+  return /^(il |la |lo |i |le |gli |l'|un |una |uno )/.test(i);
+}
 
 function mische(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
-function norm(s){ return s.toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[.,!?;:()"'’…-]/g,'').replace(/\s+/g,' '); }
+function norm(s){ if(Array.isArray(s)) s=s.join(' '); s=String(s); return s.toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[.,!?;:()"'’…-]/g,'').replace(/\s+/g,' '); }
 function loesungen(it){ const roh = Array.isArray(it)?it:String(it).split('/'); return roh.map(s=>s.trim()).filter(Boolean); }
 function distanz(a,b){
   const m=a.length,n=b.length; if(!m)return n; if(!n)return m;
@@ -348,7 +411,7 @@ function noteFuer(p){
   if(p>=30)return{n:'5',t:'mangelhaft'}; return{n:'6',t:'ungenügend'};
 }
 function zeige(id){
-  ['sprachen','kurse','auswahl','kapitel','quiz','ende'].forEach(x=>document.getElementById(x).classList.add('versteckt'));
+  ['sprachen','kurse','auswahl','archiv','kapitel','quiz','ende'].forEach(x=>document.getElementById(x).classList.add('versteckt'));
   document.getElementById(id).classList.remove('versteckt');
   window.scrollTo(0,0);
 }
@@ -363,11 +426,12 @@ function waehleKapitel(i){
   document.getElementById('btn-dialog').style.display = kap.dialog.length ? '' : 'none';
   zeige('kapitel');
 }
-function starte(m, quelle){
+function starte(m, quelle, ziel){
   modus = m;
-  const daten = quelle || (m==='vokabeln' ? kap.vokabeln : kap.dialog);
-  liste = mische(daten); idx=0; punkte=0; ergebnisse=[];
-  document.getElementById('q-modus').textContent = (m==='vokabeln'?'📚 Vokabeln':'💬 Dialog');
+  zurueckZiel = ziel || 'kapitel';
+  quizQuelle = quelle || (m==='vokabeln' ? kap.vokabeln : kap.dialog);
+  liste = mische(quizQuelle); idx=0; punkte=0; ergebnisse=[];
+  document.getElementById('q-modus').textContent = (zurueckZiel==='archiv' ? '🎯 Üben' : (m==='vokabeln'?'📚 Vokabeln':'💬 Dialog'));
   document.getElementById('q-input').placeholder = 'auf '+SPRACHE.name+' schreiben ...';
   zeige('quiz'); frage();
 }
@@ -430,9 +494,58 @@ function ende(){
 }
 function nurFalsche(){
   const falsche=ergebnisse.filter(e=>e.status!=='ok').map(e=>({de:e.de, it:e.it, wer:e.wer}));
-  starte(modus, falsche);
+  starte(modus, falsche, zurueckZiel);
 }
-function mischenNeu(){ starte(modus); }
+function mischenNeu(){ starte(modus, quizQuelle, zurueckZiel); }
+
+/* ---------- Wortschatz-Archiv ---------- */
+function oeffneArchiv(){
+  document.getElementById('archiv-flag').textContent = SPRACHE.emoji || '🌍';
+  const seen = new Set(); VOKALL = [];
+  SPRACHE.kurse.forEach(k => k.kapitel.forEach(c => (c.vokabeln||[]).forEach(v => {
+    const itS = Array.isArray(v.it) ? v.it.join(' / ') : v.it;
+    const deS = Array.isArray(v.de) ? v.de.join(' / ') : v.de;
+    const key = (String(itS)+'|'+String(deS)).toLowerCase();
+    if(!seen.has(key)){ seen.add(key); VOKALL.push({it:itS, de:deS, verb:istVerb(itS,deS), nomen:istNomen(itS,deS)}); }
+  })));
+  VOKALL.sort((a,b)=>String(a.it).localeCompare(String(b.it),'it',{sensitivity:'base'}));
+  archivFilter = 'alle';
+  document.querySelectorAll('#archiv-tabs button').forEach(b=>b.classList.toggle('an', b.dataset.f==='alle'));
+  document.getElementById('archiv-suche').value = '';
+  renderArchiv();
+  zeige('archiv');
+}
+function renderArchiv(){
+  const q = norm(document.getElementById('archiv-suche').value);
+  let arr = VOKALL;
+  if(archivFilter==='verben') arr = arr.filter(v=>v.verb);
+  else if(archivFilter==='nomen') arr = arr.filter(v=>v.nomen);
+  if(q) arr = arr.filter(v => norm(v.it).includes(q) || norm(v.de).includes(q));
+  gefiltert = arr;
+  const total = arr.length, cap = 400;
+  document.getElementById('archiv-sub').textContent = VOKALL.length+' Vokabeln · '+VOKALL.filter(v=>v.verb).length+' Verben';
+  document.getElementById('archiv-count').textContent = total+' Treffer'+(total>cap ? (' · zeige erste '+cap) : '');
+  const ueb = document.getElementById('archiv-ueben');
+  const label = archivFilter==='verben' ? 'Verben' : (archivFilter==='nomen' ? 'Nomen' : (q?'Treffer':'Auswahl'));
+  ueb.textContent = '🎯 '+label+' üben ('+Math.min(total,40)+')';
+  ueb.style.display = total ? '' : 'none';
+  let html = '';
+  for(const v of arr.slice(0,cap)){
+    html += '<div class="wz"><div class="it">'+esc(v.it)+(v.verb?'<span class="vb">Verb</span>':'')+'</div><div class="de">'+esc(v.de)+'</div></div>';
+  }
+  document.getElementById('archiv-liste').innerHTML = html || '<div class="wz"><div class="de">Nichts gefunden.</div></div>';
+}
+document.querySelectorAll('#archiv-tabs button').forEach(b => b.addEventListener('click', function(){
+  archivFilter = b.dataset.f;
+  document.querySelectorAll('#archiv-tabs button').forEach(x=>x.classList.toggle('an', x===b));
+  renderArchiv();
+}));
+document.getElementById('archiv-suche').addEventListener('input', renderArchiv);
+document.getElementById('archiv-ueben').addEventListener('click', function(){
+  if(!gefiltert.length) return;
+  const basis = gefiltert.length>40 ? mische(gefiltert).slice(0,40) : gefiltert.slice();
+  starte('vokabeln', basis.map(v=>({it:v.it, de:v.de})), 'archiv');
+});
 
 document.getElementById('q-input').addEventListener('keydown', function(ev){
   if(ev.key==='Enter'){ ev.preventDefault(); beantwortet?weiter():pruefen(); }
