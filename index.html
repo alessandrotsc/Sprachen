@@ -223,6 +223,19 @@
   .konj td.pron{color:var(--text-dim);font-size:14px;width:88px}
   .konj td.form{font-weight:700;text-align:right;font-size:19px}
 
+  /* Dialog-Übung (Chat der Reihe nach) */
+  #dlg-chat{max-height:46vh;overflow-y:auto;padding:14px}
+  .dl-line{max-width:90%;margin:9px 0;padding:10px 13px;border-radius:15px;background:var(--glas);border:1px solid var(--line)}
+  .dl-line.l{margin-right:auto;border-bottom-left-radius:5px}
+  .dl-line.r{margin-left:auto;border-bottom-right-radius:5px;background:rgba(46,203,224,.10)}
+  .dl-line.cur{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(46,203,224,.28)}
+  .dl-line.fut{opacity:.55}
+  .dl-wer{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--cyan-hell);margin-bottom:3px}
+  .dl-de{font-size:14.5px;color:var(--text);line-height:1.4}
+  .dl-it{font-size:14.5px;font-weight:700;margin-top:5px;line-height:1.4}
+  .dl-it.fut,.dl-it.cur{color:var(--text-dim);font-weight:500}
+  .dl-it.ok{color:var(--ok)} .dl-it.halb{color:var(--gelb)} .dl-it.falsch{color:var(--rot)}
+
   /* Eigene Minuten */
   .dauer-custom{display:flex;align-items:center;gap:8px;margin-top:10px}
   .dauer-custom label{font-size:13px;color:var(--text-dim)}
@@ -271,6 +284,11 @@ const APP = {"sprachen": [{"key": "it", "name": "Italienisch", "emoji": "🇮�
   <button class="kap glas" onclick="oeffneSpiel()" style="border-color:rgba(46,203,224,.35)">
     <div class="nr emoji-nr">🎮</div>
     <div><div class="t">Wortschatz-Spiel</div><div class="z" id="spiel-teaser">15-Minuten-Quiz gegen die Zeit</div></div>
+    <div class="pf">›</div>
+  </button>
+  <button class="kap glas" onclick="oeffneDialogwahl()" style="border-color:rgba(46,203,224,.35)">
+    <div class="nr emoji-nr">💬</div>
+    <div><div class="t">Dialog-Übung</div><div class="z">Einen Dialog Zeile für Zeile übersetzen</div></div>
     <div class="pf">›</div>
   </button>
   <button class="kap glas" onclick="oeffneArchiv()" style="border-color:rgba(46,203,224,.35)">
@@ -342,6 +360,47 @@ const APP = {"sprachen": [{"key": "it", "name": "Italienisch", "emoji": "🇮�
   </div>
 </div>
 
+<!-- ANSICHT: DIALOG-AUSWAHL -->
+<div id="dialogwahl" class="versteckt">
+  <button class="zurueck" onclick="zeige('kurse')">‹ Kurse</button>
+  <div class="kopf">
+    <div class="kopf-flag" id="dw-flag"></div>
+    <div><h1>Dialog-Übung</h1><div class="sub">Wähle einen Dialog</div></div>
+  </div>
+  <div id="dw-liste"></div>
+  <div class="fuss">Der Dialog wird der Reihe nach von vorne bis hinten geübt.</div>
+</div>
+
+<!-- ANSICHT: DIALOG ÜBEN (der Reihe nach) -->
+<div id="dialogueb" class="versteckt">
+  <button class="zurueck" id="dlg-back" onclick="zeige(dlgBack)">‹ Zurück</button>
+  <div class="kopf">
+    <div class="kopf-flag" id="dlg-flag"></div>
+    <div><h1 id="dlg-titel">Dialog</h1><div class="sub" id="dlg-sub"></div></div>
+  </div>
+  <div class="glas" id="dlg-chat"></div>
+  <div class="karte glas" id="dlg-eingabe" style="margin-top:14px">
+    <div class="prompt-label" id="dlg-label">Deutsch</div>
+    <div class="prompt" id="dlg-prompt"></div>
+    <div class="hinweis">Ganzen Satz auf <span id="dlg-lang">Italienisch</span> schreiben</div>
+    <input type="text" id="dlg-input" placeholder="Antwort schreiben ..."
+           autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="go">
+    <div class="rueck" id="dlg-rueck"></div>
+    <button class="btn" id="dlg-pruefen" onclick="dlgPruefen()">Prüfen</button>
+    <div class="btn-reihe">
+      <button class="btn grau" id="dlg-weiss" onclick="dlgWeissNicht()">Weiß ich nicht</button>
+      <button class="btn grau versteckt" id="dlg-weiter" onclick="dlgWeiter()">Weiter ›</button>
+    </div>
+  </div>
+  <div class="karte glas versteckt" id="dlg-ende" style="margin-top:14px">
+    <div class="prompt-label" style="text-align:center">Dialog geschafft 🎉</div>
+    <div class="note" id="dlg-note"></div>
+    <div class="punkte" id="dlg-punkte"></div>
+    <button class="btn gross" onclick="dlgNochmal()">🔁 Nochmal von vorne</button>
+    <button class="btn grau" onclick="zeige(dlgBack)">Zurück zur Auswahl</button>
+  </div>
+</div>
+
 <!-- ANSICHT: KAPITELAUSWAHL -->
 <div id="auswahl" class="versteckt">
   <button class="zurueck" onclick="zeige('kurse')">‹ Kurse</button>
@@ -363,7 +422,7 @@ const APP = {"sprachen": [{"key": "it", "name": "Italienisch", "emoji": "🇮�
   <div class="karte glas">
     <p>Du siehst das <b>deutsche</b> Wort und schreibst es in der Zielsprache. Rechtschreibfehler kosten nur einen halben Punkt, komplett falsch einen ganzen.</p>
     <button class="btn gross" onclick="starte('vokabeln')"><span class="emoji">📚</span> Vokabeln üben (<span id="anz-vok"></span>)</button>
-    <button class="btn gross grau" id="btn-dialog" onclick="starte('dialog')"><span class="emoji">💬</span> Dialog üben (<span id="anz-dia"></span>)</button>
+    <button class="btn gross grau" id="btn-dialog" onclick="startDialog(kap,'kapitel')"><span class="emoji">💬</span> Dialog üben (<span id="anz-dia"></span>)</button>
   </div>
   <div class="fuss">Reihenfolge wird bei jedem Start neu gemischt.</div>
 </div>
@@ -590,7 +649,7 @@ function noteFuer(p){
 function zeige(id){
   if(id!=='quiz') stopTimer();
   const vm=document.getElementById('verbmodal'); if(vm) vm.classList.remove('an');
-  ['sprachen','kurse','auswahl','archiv','spiel','kapitel','quiz','ende'].forEach(x=>document.getElementById(x).classList.add('versteckt'));
+  ['sprachen','kurse','auswahl','archiv','spiel','dialogwahl','dialogueb','kapitel','quiz','ende'].forEach(x=>document.getElementById(x).classList.add('versteckt'));
   document.getElementById(id).classList.remove('versteckt');
   if(id==='kurse') renderKurse();
   window.scrollTo(0,0);
@@ -977,6 +1036,132 @@ document.getElementById('spiel-start').addEventListener('click',function(){
   if(!basis.length){ toast('Bitte zuerst etwas auswählen'); return; }
   const dauer = Math.min(120, Math.max(1, spielDauer||15));
   starte('vokabeln', basis, 'spiel', {timed:true, dauer:dauer});
+});
+
+/* ---------- Dialog-Übung (der Reihe nach, ganzer Dialog sichtbar) ---------- */
+let dlgKap=null, dlgLines=[], dlgIdx=0, dlgErg=[], dlgPunkte=0, dlgBeantwortet=false, dlgBack='kurse';
+
+function oeffneDialogwahl(){
+  document.getElementById('dw-flag').textContent = SPRACHE.emoji||'🌍';
+  let html='';
+  SPRACHE.kurse.forEach(function(k,ki){
+    const mitD = k.kapitel.filter(c=>(c.dialog||[]).length);
+    if(!mitD.length) return;
+    html += '<div class="sp-kurs glas">'
+      + '<button class="sp-kurs-head" onclick="toggleDwOpen('+ki+')">'
+      + '<span class="sp-kh-emoji">'+(k.emoji||'📘')+'</span>'
+      + '<span class="sp-kh-titel">'+esc(k.titel)+'</span>'
+      + '<span class="sp-kh-meta">'+mitD.length+' Dialoge</span>'
+      + '<span class="sp-chev" id="dwchev-'+ki+'">▾</span></button>'
+      + '<div class="sp-kaps versteckt" id="dwkaps-'+ki+'">';
+    k.kapitel.forEach(function(c,ci){
+      if(!(c.dialog||[]).length) return;
+      html += '<button class="sp-kap" onclick="startDialogRef('+ki+','+ci+')">'
+        + '<span>'+('0'+c.nummer).slice(-2)+' · '+esc(c.titelIt||c.titelDe||'')+'</span>'
+        + '<span class="sp-vk">'+c.dialog.length+' Z.</span></button>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('dw-liste').innerHTML = html || '<div class="fuss">Für diese Sprache gibt es noch keine Dialoge.</div>';
+  zeige('dialogwahl');
+}
+function toggleDwOpen(ki){
+  document.getElementById('dwkaps-'+ki).classList.toggle('versteckt');
+  document.getElementById('dwchev-'+ki).classList.toggle('auf');
+}
+function startDialogRef(ki,ci){ startDialog(SPRACHE.kurse[ki].kapitel[ci], 'dialogwahl'); }
+
+function startDialog(kapObj, back){
+  const dlg = (kapObj.dialog||[]).filter(l=>l && l.de && l.it);
+  if(!dlg.length){ toast('Dieses Kapitel hat keinen Dialog'); return; }
+  dlgKap = kapObj; dlgLines = dlg; dlgIdx = 0; dlgErg = []; dlgPunkte = 0; dlgBack = back || 'kurse';
+  document.getElementById('dlg-flag').textContent = SPRACHE.emoji||'🌍';
+  document.getElementById('dlg-titel').textContent = 'Dialog · ' + (kapObj.titelIt || kapObj.titelDe || ('Kapitel '+kapObj.nummer));
+  document.getElementById('dlg-sub').textContent = dlg.length + ' Zeilen · der Reihe nach';
+  document.getElementById('dlg-lang').textContent = SPRACHE.name;
+  document.getElementById('dlg-eingabe').classList.remove('versteckt');
+  document.getElementById('dlg-ende').classList.add('versteckt');
+  zeige('dialogueb');
+  dlgFrage();
+}
+function dlgRender(){
+  const speakers = [...new Set(dlgLines.map(l=>l.wer||''))];
+  let html='';
+  dlgLines.forEach(function(l,i){
+    const idxForSide = l.wer ? speakers.indexOf(l.wer) : i;
+    const side = (idxForSide%2===0) ? 'l' : 'r';
+    const erledigt = i<dlgIdx || (i===dlgIdx && dlgBeantwortet);
+    let state = erledigt ? 'done' : (i===dlgIdx ? 'cur' : 'fut');
+    let it;
+    if(state==='done'){
+      const e = dlgErg[i];
+      const cls = e ? (e.status==='ok'?'ok':e.status==='halb'?'halb':'falsch') : '';
+      it = '<div class="dl-it '+cls+'">'+esc(loesungen(l.it).join('  /  '))+'</div>';
+    } else if(state==='cur'){
+      it = '<div class="dl-it cur">✍︎ übersetzen …</div>';
+    } else {
+      it = '<div class="dl-it fut">• • •</div>';
+    }
+    html += '<div class="dl-line '+side+' '+state+'">'
+      + (l.wer ? '<div class="dl-wer">'+esc(l.wer)+'</div>' : '')
+      + '<div class="dl-de">'+esc(l.de)+'</div>' + it + '</div>';
+  });
+  const chat = document.getElementById('dlg-chat');
+  chat.innerHTML = html;
+  const cur = chat.querySelector('.dl-line.cur') || chat.querySelector('.dl-line.done:last-child');
+  if(cur) cur.scrollIntoView({block:'center'});
+}
+function dlgFrage(){
+  dlgBeantwortet = false;
+  const l = dlgLines[dlgIdx];
+  document.getElementById('dlg-label').textContent = 'Deutsch' + (l.wer ? (' · '+l.wer) : '');
+  document.getElementById('dlg-prompt').textContent = l.de;
+  const inp = document.getElementById('dlg-input'); inp.value=''; inp.disabled=false;
+  document.getElementById('dlg-rueck').className='rueck';
+  document.getElementById('dlg-pruefen').classList.remove('versteckt');
+  document.getElementById('dlg-weiss').classList.remove('versteckt');
+  document.getElementById('dlg-weiter').classList.add('versteckt');
+  dlgRender();
+  inp.focus();
+}
+function dlgZeigeRueck(res){
+  dlgBeantwortet = true;
+  const l = dlgLines[dlgIdx];
+  document.getElementById('dlg-input').disabled = true;
+  const ziele = loesungen(l.it).join('  /  ');
+  const r = document.getElementById('dlg-rueck');
+  if(res.status==='ok'){ r.className='rueck ok'; r.innerHTML='<b>✓ Richtig! (1 Punkt)</b>'+ziele; }
+  else if(res.status==='halb'){ r.className='rueck halb'; r.innerHTML='<b>≈ Fast richtig (½ Punkt)</b>Richtig: <span class="loesung">'+ziele+'</span>'; }
+  else { r.className='rueck falsch'; r.innerHTML='<b>✗ Leider falsch (0 Punkte)</b>Richtig: <span class="loesung">'+ziele+'</span>'; }
+  dlgPunkte += res.p;
+  dlgErg[dlgIdx] = {status:res.status};
+  document.getElementById('dlg-pruefen').classList.add('versteckt');
+  document.getElementById('dlg-weiss').classList.add('versteckt');
+  const w = document.getElementById('dlg-weiter'); w.classList.remove('versteckt');
+  w.textContent = (dlgIdx+1<dlgLines.length) ? 'Weiter ›' : 'Dialog fertig ›';
+  dlgRender();
+  w.focus();
+}
+function dlgPruefen(){
+  if(dlgBeantwortet) return;
+  const val = document.getElementById('dlg-input').value;
+  if(!val.trim()){ document.getElementById('dlg-input').focus(); return; }
+  dlgZeigeRueck(bewerte(val, dlgLines[dlgIdx].it));
+}
+function dlgWeissNicht(){ if(!dlgBeantwortet) dlgZeigeRueck({p:0,status:'falsch'}); }
+function dlgWeiter(){ if(dlgIdx+1<dlgLines.length){ dlgIdx++; dlgFrage(); } else dlgEnde(); }
+function dlgEnde(){
+  const max = dlgLines.length, proz = Math.round(dlgPunkte/max*100), note = noteFuer(proz);
+  document.getElementById('dlg-note').textContent = note.n;
+  const pStr = (Math.round(dlgPunkte*10)/10).toString().replace('.',',');
+  document.getElementById('dlg-punkte').innerHTML = pStr+' / '+max+' Punkten · <b>'+proz+'%</b> · '+note.t;
+  document.getElementById('dlg-eingabe').classList.add('versteckt');
+  document.getElementById('dlg-ende').classList.remove('versteckt');
+  dlgRender();
+}
+function dlgNochmal(){ startDialog(dlgKap, dlgBack); }
+document.getElementById('dlg-input').addEventListener('keydown', function(ev){
+  if(ev.key==='Enter'){ ev.preventDefault(); dlgBeantwortet ? dlgWeiter() : dlgPruefen(); }
 });
 
 document.getElementById('q-input').addEventListener('keydown', function(ev){
