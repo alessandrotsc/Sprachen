@@ -152,6 +152,48 @@
   .wz .it{font-weight:600}
   .wz .de{color:var(--text-dim);text-align:right}
   .wz .vb{font-size:10px;font-weight:800;color:var(--cyan-hell);background:rgba(46,203,224,.12);border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:7px;vertical-align:middle}
+  /* Fortschritt (Kurse-Screen) */
+  .fortschritt{padding:16px 18px;margin-bottom:16px}
+  .fortschritt .ft-kopf{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .fortschritt .ft-titel{font-weight:700;font-size:15px}
+  .fortschritt .ft-proz{font-weight:900;font-size:22px;
+    background:linear-gradient(135deg,var(--cyan-hell),var(--cyan2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .fortschritt .ft-sub{color:var(--text-dim);font-size:13px;margin-top:2px}
+
+  /* Kapitel-Abhaken */
+  .kap-wrap{position:relative}
+  .kap-wrap .kap{padding-right:66px}
+  .kap-wrap .kap.fertig .nr{background:var(--ok-bg);color:var(--ok);border-color:rgba(94,230,168,.35)}
+  .chk{position:absolute;top:50%;right:12px;transform:translateY(-50%);width:40px;height:40px;border-radius:13px;
+    background:var(--glas-stark);border:1.5px solid var(--line);color:#5b7692;font-size:20px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;padding:0}
+  .chk.an{background:linear-gradient(135deg,var(--ok),#39c78a);color:#04222e;border-color:transparent}
+  .kap .z .done-tag{color:var(--ok)}
+
+  /* Timer im Quiz */
+  .timer{display:inline-block;font-weight:800;font-size:14px;color:var(--cyan-hell);background:rgba(46,203,224,.14);
+    border:1px solid var(--line);border-radius:99px;padding:3px 11px;margin-right:8px;font-variant-numeric:tabular-nums}
+  .timer.warn{color:var(--rot);background:var(--rot-bg);border-color:rgba(255,138,138,.35)}
+
+  /* Wortschatz-Spiel: Auswahl */
+  #spiel-auswahl-box{margin-top:12px}
+  .sp-kurs{margin-bottom:10px;overflow:hidden}
+  .sp-kurs-head{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:14px 15px;color:var(--text);background:none}
+  .sp-kurs-head .sp-kh-emoji{font-size:22px}
+  .sp-kurs-head .sp-kh-titel{font-weight:700;font-size:16px}
+  .sp-kurs-head .sp-kh-meta{margin-left:auto;font-size:12.5px;color:var(--cyan-hell)}
+  .sp-kurs-head .sp-chev{color:var(--text-dim);font-size:14px;transition:transform .2s;width:14px;text-align:center}
+  .sp-kurs-head .sp-chev.auf{transform:rotate(180deg)}
+  .sp-kaps{border-top:1px solid var(--line);padding:6px}
+  .sp-kap{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:11px 10px;border-radius:11px;color:var(--text);background:none;font-size:15px}
+  .sp-kap:active{background:rgba(255,255,255,.05)}
+  .sp-kap .sp-check{flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:1.5px solid var(--line);background:var(--glas-stark);
+    display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:transparent}
+  .sp-kap .sp-check.an{background:linear-gradient(135deg,var(--cyan),var(--cyan2));border-color:transparent;color:#04222e}
+  .sp-kap .sp-vk{margin-left:auto;font-size:12px;color:var(--text-dim)}
+  .sp-kap-all{font-weight:700;color:var(--cyan-hell)}
+  .sp-kap-all .sp-check.an{background:linear-gradient(135deg,var(--cyan-hell),var(--cyan));}
+
   /* Toast */
   #toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
     background:rgba(8,31,52,.92);border:1px solid var(--line);color:var(--text);padding:13px 18px;border-radius:14px;font-size:14px;
@@ -185,6 +227,16 @@ const APP = {"sprachen": [{"key": "it", "name": "Italienisch", "emoji": "🇮�
     <div class="kopf-flag" id="kurse-flag"></div>
     <div><h1 id="sprach-titel"></h1><div class="sub">Wähle einen Kurs</div></div>
   </div>
+  <div class="fortschritt glas">
+    <div class="ft-kopf"><span class="ft-titel">Dein Fortschritt</span><span class="ft-proz" id="ft-proz">0%</span></div>
+    <div class="leiste"><i id="ft-balken"></i></div>
+    <div class="ft-sub" id="ft-sub">0 von 0 Kapiteln abgeschlossen</div>
+  </div>
+  <button class="kap glas" onclick="oeffneSpiel()" style="border-color:rgba(46,203,224,.35)">
+    <div class="nr emoji-nr">🎮</div>
+    <div><div class="t">Wortschatz-Spiel</div><div class="z" id="spiel-teaser">15-Minuten-Quiz gegen die Zeit</div></div>
+    <div class="pf">›</div>
+  </button>
   <button class="kap glas" onclick="oeffneArchiv()" style="border-color:rgba(46,203,224,.35)">
     <div class="nr emoji-nr">🗂️</div>
     <div><div class="t">Wortschatz-Archiv</div><div class="z" id="archiv-teaser"></div></div>
@@ -212,6 +264,31 @@ const APP = {"sprachen": [{"key": "it", "name": "Italienisch", "emoji": "🇮�
   <button class="btn" id="archiv-ueben" style="margin-top:12px">🎯 Üben</button>
   <div class="fuss" id="archiv-count" style="margin-top:14px"></div>
   <div class="archiv-liste" id="archiv-liste"></div>
+</div>
+
+<!-- ANSICHT: WORTSCHATZ-SPIEL (Setup) -->
+<div id="spiel" class="versteckt">
+  <button class="zurueck" onclick="zeige('kurse')">‹ Kurse</button>
+  <div class="kopf">
+    <div class="kopf-flag" id="spiel-flag"></div>
+    <div><h1>Wortschatz-Spiel</h1><div class="sub">Quiz gegen die Zeit</div></div>
+  </div>
+  <div class="karte glas">
+    <p>Alle Vokabeln aus deiner Auswahl werden gemischt abgefragt – schaff so viele du kannst, bevor die Zeit abläuft.</p>
+    <div class="seg" id="spiel-modus">
+      <button data-m="gelernt" class="an">✅ Gelernte</button>
+      <button data-m="auswahl">🎯 Selbst wählen</button>
+    </div>
+    <div id="spiel-auswahl-box" class="versteckt"></div>
+    <div class="abschnitt" style="margin:16px 4px 8px">Dauer</div>
+    <div class="seg" id="spiel-dauer">
+      <button data-d="10">10 Min</button>
+      <button data-d="15" class="an">15 Min</button>
+      <button data-d="20">20 Min</button>
+    </div>
+    <button class="btn gross" id="spiel-start"><span class="emoji">🎮</span> Spiel starten (<span id="spiel-count">0</span> Vokabeln)</button>
+    <div class="hinweis" id="spiel-hinweis" style="text-align:center;margin-top:10px"></div>
+  </div>
 </div>
 
 <!-- ANSICHT: KAPITELAUSWAHL -->
@@ -244,7 +321,7 @@ const APP = {"sprachen": [{"key": "it", "name": "Italienisch", "emoji": "🇮�
 <div id="quiz" class="versteckt">
   <button class="zurueck" onclick="zeige(zurueckZiel)">‹ Zurück</button>
   <div class="karte glas">
-    <div class="meta"><span id="q-modus"></span><span id="q-zaehler"></span></div>
+    <div class="meta"><span id="q-modus"></span><span><span class="timer versteckt" id="q-timer"></span><span id="q-zaehler"></span></span></div>
     <div class="leiste"><i id="q-balken"></i></div>
     <div style="margin-top:18px">
       <div class="prompt-label" id="q-label">Deutsch</div>
@@ -290,6 +367,13 @@ function toast(msg){
 /* ---------- Navigation Ebene 1+2: Sprache & Kurs ---------- */
 let SPRACHE = null, KURS = null;
 
+/* ---------- Fortschritt (localStorage) ---------- */
+function kapKey(spr,kurs,nummer){ return spr+'|'+kurs+'|'+nummer; }
+let PROG = (function(){ try{ return new Set(JSON.parse(localStorage.getItem('sprachen_fortschritt_v1')||'[]')); }catch(e){ return new Set(); } })();
+function speicherProg(){ try{ localStorage.setItem('sprachen_fortschritt_v1', JSON.stringify([...PROG])); }catch(e){} }
+function istFertig(spr,kurs,nummer){ return PROG.has(kapKey(spr,kurs,nummer)); }
+function toggleFertig(spr,kurs,nummer){ const k=kapKey(spr,kurs,nummer); if(PROG.has(k)) PROG.delete(k); else PROG.add(k); speicherProg(); }
+
 /* Hero-Chips: Gesamtzahlen */
 (function(){
   const aktive = APP.sprachen.filter(s=>s.status==='aktiv');
@@ -324,19 +408,32 @@ function waehleSprache(i){
   SPRACHE = s;
   document.getElementById('sprach-titel').textContent = s.name;
   document.getElementById('kurse-flag').textContent = s.emoji||'🌍';
-  let html='';
+  const alleV = s.kurse.reduce((n,k)=>n+k.kapitel.reduce((m,c)=>m+(c.vokabeln?c.vokabeln.length:0),0),0);
+  document.getElementById('archiv-teaser').textContent = alleV+' Vokabeln durchsuchen & üben';
+  renderKurse();
+  zeige('kurse');
+}
+
+/* Kurse-Liste + Fortschrittsbalken rendern (auch beim Zurückkehren aktuell) */
+function renderKurse(){
+  const s = SPRACHE; if(!s) return;
+  let done=0, total=0, html='';
   s.kurse.forEach(function(k,ki){
     const vok = k.kapitel.reduce((a,c)=>a+c.vokabeln.length,0);
+    const kdone = k.kapitel.filter(c=>istFertig(s.name,k.titel,c.nummer)).length;
+    done += kdone; total += k.kapitel.length;
+    const tag = kdone ? ' · <span class="done-tag">✓ '+kdone+'/'+k.kapitel.length+'</span>' : '';
     html += '<button class="kap glas" onclick="waehleKurs('+ki+')">'
       + '<div class="nr emoji-nr">'+(k.emoji||'📘')+'</div>'
-      + '<div><div class="t">'+k.titel+'</div>'
-      + '<div class="z">'+k.kapitel.length+' Kapitel · '+vok+' Vokabeln</div></div>'
+      + '<div><div class="t">'+esc(k.titel)+'</div>'
+      + '<div class="z">'+k.kapitel.length+' Kapitel · '+vok+' Vokabeln'+tag+'</div></div>'
       + '<div class="pf">›</div></button>';
   });
   document.getElementById('kurs-liste').innerHTML = html;
-  const alleV = s.kurse.reduce((n,k)=>n+k.kapitel.reduce((m,c)=>m+(c.vokabeln?c.vokabeln.length:0),0),0);
-  document.getElementById('archiv-teaser').textContent = alleV+' Vokabeln durchsuchen & üben';
-  zeige('kurse');
+  const proz = total ? Math.round(done/total*100) : 0;
+  document.getElementById('ft-proz').textContent = proz+'%';
+  document.getElementById('ft-balken').style.width = proz+'%';
+  document.getElementById('ft-sub').textContent = done+' von '+total+' Kapiteln abgeschlossen';
 }
 
 function waehleKurs(ki){
@@ -346,14 +443,29 @@ function waehleKurs(ki){
   let html='';
   KURS.kapitel.forEach(function(k,i){
     const nr = ('0'+k.nummer).slice(-2);
-    html += '<button class="kap glas" onclick="waehleKapitel('+i+')">'
+    const fertig = istFertig(SPRACHE.name, KURS.titel, k.nummer);
+    html += '<div class="kap-wrap">'
+      + '<button class="kap glas'+(fertig?' fertig':'')+'" onclick="waehleKapitel('+i+')">'
       + '<div class="nr">'+nr+'</div>'
-      + '<div><div class="t">'+k.titelIt+'</div><div class="u">'+(k.titelDe||'')+'</div>'
+      + '<div><div class="t">'+esc(k.titelIt)+'</div><div class="u">'+esc(k.titelDe||'')+'</div>'
       + '<div class="z">'+k.vokabeln.length+' Vokabeln · '+k.dialog.length+' Dialogzeilen</div></div>'
-      + '<div class="pf">›</div></button>';
+      + '</button>'
+      + '<button class="chk'+(fertig?' an':'')+'" id="chk-'+i+'" onclick="toggleFertigUI('+i+',event)" title="Als abgeschlossen markieren">✓</button>'
+      + '</div>';
   });
   document.getElementById('kap-liste').innerHTML = html;
   zeige('auswahl');
+}
+function toggleFertigUI(i, ev){
+  ev.stopPropagation();
+  const k = KURS.kapitel[i];
+  toggleFertig(SPRACHE.name, KURS.titel, k.nummer);
+  const fertig = istFertig(SPRACHE.name, KURS.titel, k.nummer);
+  const btn = document.getElementById('chk-'+i);
+  btn.classList.toggle('an', fertig);
+  const tile = btn.previousElementSibling;
+  if(tile) tile.classList.toggle('fertig', fertig);
+  toast(fertig ? '✓ Kapitel '+k.nummer+' abgeschlossen' : 'Kapitel '+k.nummer+' wieder offen');
 }
 
 /* ---------- Uebungs-Engine (Kapitel / Quiz / Ergebnis) ---------- */
@@ -411,8 +523,10 @@ function noteFuer(p){
   if(p>=30)return{n:'5',t:'mangelhaft'}; return{n:'6',t:'ungenügend'};
 }
 function zeige(id){
-  ['sprachen','kurse','auswahl','archiv','kapitel','quiz','ende'].forEach(x=>document.getElementById(x).classList.add('versteckt'));
+  if(id!=='quiz') stopTimer();
+  ['sprachen','kurse','auswahl','archiv','spiel','kapitel','quiz','ende'].forEach(x=>document.getElementById(x).classList.add('versteckt'));
   document.getElementById(id).classList.remove('versteckt');
+  if(id==='kurse') renderKurse();
   window.scrollTo(0,0);
 }
 
@@ -426,15 +540,38 @@ function waehleKapitel(i){
   document.getElementById('btn-dialog').style.display = kap.dialog.length ? '' : 'none';
   zeige('kapitel');
 }
-function starte(m, quelle, ziel){
+let spielTimerId=null, spielEnde=0, aktTimed=false, aktDauer=15;
+function starte(m, quelle, ziel, opts){
+  stopTimer();
   modus = m;
   zurueckZiel = ziel || 'kapitel';
   quizQuelle = quelle || (m==='vokabeln' ? kap.vokabeln : kap.dialog);
+  aktTimed = !!(opts && opts.timed);
+  if(opts && opts.dauer) aktDauer = opts.dauer;
   liste = mische(quizQuelle); idx=0; punkte=0; ergebnisse=[];
-  document.getElementById('q-modus').textContent = (zurueckZiel==='archiv' ? '🎯 Üben' : (m==='vokabeln'?'📚 Vokabeln':'💬 Dialog'));
+  document.getElementById('q-modus').textContent =
+      zurueckZiel==='spiel'  ? '🎮 Spiel'
+    : zurueckZiel==='archiv' ? '🎯 Üben'
+    : (m==='vokabeln'?'📚 Vokabeln':'💬 Dialog');
   document.getElementById('q-input').placeholder = 'auf '+SPRACHE.name+' schreiben ...';
+  document.getElementById('q-timer').classList.toggle('versteckt', !aktTimed);
   zeige('quiz'); frage();
+  if(aktTimed) starteTimer(aktDauer);
 }
+function starteTimer(min){
+  spielEnde = Date.now() + min*60000;
+  tickTimer();
+  spielTimerId = setInterval(tickTimer, 500);
+}
+function tickTimer(){
+  const rest = Math.max(0, spielEnde - Date.now());
+  const el = document.getElementById('q-timer');
+  const s = Math.round(rest/1000), mm = Math.floor(s/60), ss = s%60;
+  el.textContent = '⏱️ '+mm+':'+('0'+ss).slice(-2);
+  el.classList.toggle('warn', rest<=60000);
+  if(rest<=0){ stopTimer(); toast('⏱️ Zeit ist um!'); ende(); }
+}
+function stopTimer(){ if(spielTimerId){ clearInterval(spielTimerId); spielTimerId=null; } }
 function frage(){
   beantwortet=false;
   const f=liste[idx];
@@ -475,10 +612,15 @@ function pruefen(){
 function weissNicht(){ if(!beantwortet) zeigeRueck({p:0,status:'falsch'}); }
 function weiter(){ if(idx+1<liste.length){ idx++; frage(); } else ende(); }
 function ende(){
-  const max=liste.length, proz=Math.round(punkte/max*100), note=noteFuer(proz);
+  stopTimer();
+  const antworten = ergebnisse.length;
+  const max = aktTimed ? Math.max(antworten,1) : liste.length;
+  const proz = Math.round(punkte/max*100), note=noteFuer(proz);
   document.getElementById('e-note').textContent=note.n;
   const pStr=(Math.round(punkte*10)/10).toString().replace('.',',');
-  document.getElementById('e-punkte').innerHTML=pStr+' / '+max+' Punkten · <b>'+proz+'%</b> · '+note.t;
+  document.getElementById('e-punkte').innerHTML =
+      (aktTimed ? '⏱️ '+antworten+' Vokabeln geschafft · ' : '')
+      + pStr+' / '+max+' Punkten · <b>'+proz+'%</b> · '+note.t;
   document.getElementById('e-balken').style.width=proz+'%';
   const falsche=ergebnisse.filter(e=>e.status!=='ok');
   const btnF=document.getElementById('e-falsche');
@@ -494,9 +636,9 @@ function ende(){
 }
 function nurFalsche(){
   const falsche=ergebnisse.filter(e=>e.status!=='ok').map(e=>({de:e.de, it:e.it, wer:e.wer}));
-  starte(modus, falsche, zurueckZiel);
+  starte(modus, falsche, zurueckZiel, {timed:false});
 }
-function mischenNeu(){ starte(modus, quizQuelle, zurueckZiel); }
+function mischenNeu(){ starte(modus, quizQuelle, zurueckZiel, {timed:aktTimed, dauer:aktDauer}); }
 
 /* ---------- Wortschatz-Archiv ---------- */
 function oeffneArchiv(){
@@ -545,6 +687,121 @@ document.getElementById('archiv-ueben').addEventListener('click', function(){
   if(!gefiltert.length) return;
   const basis = gefiltert.length>40 ? mische(gefiltert).slice(0,40) : gefiltert.slice();
   starte('vokabeln', basis.map(v=>({it:v.it, de:v.de})), 'archiv');
+});
+
+/* ---------- Wortschatz-Spiel ---------- */
+let spielModusWahl='gelernt', spielAuswahl=new Set(), spielDauer=15;
+
+function oeffneSpiel(){
+  document.getElementById('spiel-flag').textContent = SPRACHE.emoji||'🌍';
+  spielModusWahl='gelernt';
+  document.querySelectorAll('#spiel-modus button').forEach(b=>b.classList.toggle('an', b.dataset.m==='gelernt'));
+  document.getElementById('spiel-auswahl-box').classList.add('versteckt');
+  renderSpielAuswahl();
+  aktualisiereSpielCount();
+  zeige('spiel');
+}
+function spielKapitelListe(){
+  const out=[];
+  SPRACHE.kurse.forEach(k=>k.kapitel.forEach(c=>{
+    const key=kapKey(SPRACHE.name,k.titel,c.nummer);
+    const drin = spielModusWahl==='gelernt' ? PROG.has(key) : spielAuswahl.has(key);
+    if(drin) out.push(c);
+  }));
+  return out;
+}
+function sammleSpielVok(){
+  const seen=new Set(), vok=[];
+  spielKapitelListe().forEach(c=>(c.vokabeln||[]).forEach(v=>{
+    const itS=Array.isArray(v.it)?v.it.join(' / '):v.it;
+    const deS=Array.isArray(v.de)?v.de.join(' / '):v.de;
+    const key=(String(itS)+'|'+String(deS)).toLowerCase();
+    if(!seen.has(key)){ seen.add(key); vok.push({it:itS, de:deS}); }
+  }));
+  return vok;
+}
+function aktualisiereSpielCount(){
+  const vok=sammleSpielVok();
+  document.getElementById('spiel-count').textContent = vok.length;
+  const start=document.getElementById('spiel-start');
+  const hint=document.getElementById('spiel-hinweis');
+  if(!vok.length){
+    start.style.opacity='.5';
+    hint.textContent = spielModusWahl==='gelernt'
+      ? 'Markiere zuerst Kapitel als abgeschlossen (Häkchen bei den Kapiteln) – oder wähle unten selbst aus.'
+      : 'Wähle mindestens ein Kapitel aus.';
+  } else {
+    start.style.opacity='1';
+    hint.textContent = spielKapitelListe().length+' Kapitel · '+vok.length+' Vokabeln werden abgefragt.';
+  }
+}
+function renderSpielAuswahl(){
+  let html='';
+  SPRACHE.kurse.forEach(function(k,ki){
+    const total=k.kapitel.length;
+    const sel=k.kapitel.filter(c=>spielAuswahl.has(kapKey(SPRACHE.name,k.titel,c.nummer))).length;
+    html += '<div class="sp-kurs glas">'
+      + '<button class="sp-kurs-head" onclick="toggleKursOpen('+ki+')">'
+      + '<span class="sp-kh-emoji">'+(k.emoji||'📘')+'</span>'
+      + '<span class="sp-kh-titel">'+esc(k.titel)+'</span>'
+      + '<span class="sp-kh-meta" id="spkm-'+ki+'">'+sel+'/'+total+'</span>'
+      + '<span class="sp-chev" id="spchev-'+ki+'">▾</span>'
+      + '</button>'
+      + '<div class="sp-kaps versteckt" id="spkaps-'+ki+'">'
+      + '<button class="sp-kap sp-kap-all" onclick="toggleKursAlle('+ki+')"><span class="sp-check'+((sel===total&&total)?' an':'')+'" id="spall-'+ki+'">✓</span><span>Ganzen Kurs</span></button>';
+    k.kapitel.forEach(function(c,i){
+      const on = spielAuswahl.has(kapKey(SPRACHE.name,k.titel,c.nummer));
+      html += '<button class="sp-kap" onclick="toggleSpielKap('+ki+','+i+')">'
+        + '<span class="sp-check'+(on?' an':'')+'" id="spchk-'+ki+'-'+i+'">✓</span>'
+        + '<span>'+('0'+c.nummer).slice(-2)+' · '+esc(c.titelIt||c.titelDe||'')+'</span>'
+        + '<span class="sp-vk">'+c.vokabeln.length+'</span>'
+        + '</button>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('spiel-auswahl-box').innerHTML = html;
+}
+function toggleKursOpen(ki){
+  document.getElementById('spkaps-'+ki).classList.toggle('versteckt');
+  document.getElementById('spchev-'+ki).classList.toggle('auf');
+}
+function toggleSpielKap(ki,i){
+  const k=SPRACHE.kurse[ki], c=k.kapitel[i], key=kapKey(SPRACHE.name,k.titel,c.nummer);
+  if(spielAuswahl.has(key)) spielAuswahl.delete(key); else spielAuswahl.add(key);
+  const el=document.getElementById('spchk-'+ki+'-'+i); if(el) el.classList.toggle('an', spielAuswahl.has(key));
+  aktualisiereKursMeta(ki); aktualisiereSpielCount();
+}
+function toggleKursAlle(ki){
+  const k=SPRACHE.kurse[ki];
+  const keys=k.kapitel.map(c=>kapKey(SPRACHE.name,k.titel,c.nummer));
+  const alle=keys.every(x=>spielAuswahl.has(x));
+  keys.forEach(x=>{ if(alle) spielAuswahl.delete(x); else spielAuswahl.add(x); });
+  k.kapitel.forEach(function(c,i){
+    const el=document.getElementById('spchk-'+ki+'-'+i);
+    if(el) el.classList.toggle('an', spielAuswahl.has(kapKey(SPRACHE.name,k.titel,c.nummer)));
+  });
+  aktualisiereKursMeta(ki); aktualisiereSpielCount();
+}
+function aktualisiereKursMeta(ki){
+  const k=SPRACHE.kurse[ki], total=k.kapitel.length;
+  const sel=k.kapitel.filter(c=>spielAuswahl.has(kapKey(SPRACHE.name,k.titel,c.nummer))).length;
+  const m=document.getElementById('spkm-'+ki); if(m) m.textContent=sel+'/'+total;
+  const all=document.getElementById('spall-'+ki); if(all) all.classList.toggle('an', sel===total && total);
+}
+document.querySelectorAll('#spiel-modus button').forEach(b=>b.addEventListener('click',function(){
+  spielModusWahl=b.dataset.m;
+  document.querySelectorAll('#spiel-modus button').forEach(x=>x.classList.toggle('an',x===b));
+  document.getElementById('spiel-auswahl-box').classList.toggle('versteckt', spielModusWahl!=='auswahl');
+  aktualisiereSpielCount();
+}));
+document.querySelectorAll('#spiel-dauer button').forEach(b=>b.addEventListener('click',function(){
+  spielDauer=parseInt(b.dataset.d,10);
+  document.querySelectorAll('#spiel-dauer button').forEach(x=>x.classList.toggle('an',x===b));
+}));
+document.getElementById('spiel-start').addEventListener('click',function(){
+  const vok=sammleSpielVok();
+  if(!vok.length){ toast('Bitte zuerst Kapitel auswählen'); return; }
+  starte('vokabeln', vok, 'spiel', {timed:true, dauer:spielDauer});
 });
 
 document.getElementById('q-input').addEventListener('keydown', function(ev){
